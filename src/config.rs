@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, env, fs, path::PathBuf};
+use std::{collections::HashMap, env, fs};
 use validator::{Validate, ValidationError};
 
 pub struct ConfigBuilder {
@@ -23,21 +23,23 @@ impl ConfigBuilder {
     pub fn extract_path(mut self) -> Self {
         let path = env::args().nth(1);
 
-        if path.is_some() {
-            self.file_path = Some(path.unwrap());
+        if let Some(file_path) = path {
+            self.file_path = Some(file_path);
         }
 
         self
     }
 
     pub fn extract_config_body(mut self) -> Self {
-        let mut path = PathBuf::from(env::current_dir().expect("Cannot get current directory"));
+        let mut path = env::current_dir().expect("Cannot get current directory");
         path.push(self.file_path.as_ref().unwrap());
 
-        let content = fs::read_to_string(path).expect(&format!(
-            "Cannot read file with current path: {}",
-            self.file_path.as_ref().unwrap()
-        ));
+        let content = fs::read_to_string(path).unwrap_or_else(|_| {
+            panic!(
+                "Cannot read file with current path: {}",
+                self.file_path.as_ref().unwrap()
+            )
+        });
 
         self.file_content = Some(content);
 
