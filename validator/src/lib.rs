@@ -11,6 +11,10 @@ impl ValidationError {
     }
 }
 
+pub fn is_enum(current_value: &str, values: Vec<&'static str>) -> bool {
+    values.contains(&current_value)
+}
+
 pub trait Validate {
     fn validate(&self) -> Result<(), ValidationError>;
 }
