@@ -1,16 +1,25 @@
 use serde::{Deserialize, Serialize};
 use std::{env, fs};
-use validator::Validate;
 
 pub struct ConfigBuilder {
     file_path: Option<String>,
     file_content: Option<String>,
 }
 
-#[derive(Serialize, Validate, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
+pub enum BotMode {
+    #[serde(rename="telegram")]
+    Telegram,
+    #[serde(rename="console")]
+    Console,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    #[validate(is_enum("console", "telegram"))]
-    mode: String,
+    pub mode: BotMode,
+    pub help_msg: String,
+    pub repeat_msg: String,
+    pub default_repeat_number: i32,
 }
 
 impl ConfigBuilder {
@@ -51,12 +60,6 @@ impl ConfigBuilder {
         let config: Config = serde_yaml::from_str(self.file_content.as_ref().unwrap())
             .map_err(|e| format!("Parse config failed: {}", e))
             .unwrap();
-
-        let validate_result = config.validate();
-
-        if let Err(errors) = validate_result {
-            panic!("Config is invalid: {:?}", errors);
-        }
 
         config
     }

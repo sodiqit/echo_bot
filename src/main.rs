@@ -1,6 +1,4 @@
-mod config;
-
-use config::ConfigBuilder;
+use echo_bot::config::ConfigBuilder;
 
 fn main() {
     let config = ConfigBuilder::new()
@@ -8,4 +6,5 @@ fn main() {
         .extract_config_body()
         .build();
 
+    echo_bot::run_bot(config);
 }
