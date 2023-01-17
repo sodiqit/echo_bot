@@ -30,8 +30,14 @@ fn impl_validate_macro(ast: &DeriveInput) -> TokenStream {
         use validator::ValidationError;
 
         impl Validate for #name {
-            fn validate(&self) -> Result<(), ValidationError> {
+            fn validate(&self) -> Result<(), Vec<ValidationError>> {
+                let mut errors: Vec<ValidationError> = vec![];
                 #(#validations)*
+
+                if errors.len() > 0 {
+                    return Err(errors);
+                }
+
                 Ok(())
             }
         }
@@ -151,13 +157,19 @@ fn quote_validation(fields_validation: Vec<FieldValidation>) -> Vec<TokenStream>
         .into_iter()
         .fold(vec![], |mut acc, field_validation| {
             let FieldValidation { name, validators } = field_validation;
+            let field_name = name.to_string();
             for validator in validators {
                 match validator {
                     Validator::Enum(values) => {
+                        let joined_values = values.join(", ");
                         let res = quote! {
                             use validator::is_enum;
 
                             let is_valid_enum = is_enum(self.#name.as_str(), vec!(#(#values,)*));
+
+                            if !is_valid_enum {
+                                errors.push(ValidationError::new(format!("invalid enum. Expected: {}, received: {}", #joined_values, self.#name.as_str()), stringify!(#field_name)));
+                            }
                         };
 
                         acc.push(res);

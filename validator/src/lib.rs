@@ -2,12 +2,13 @@ pub use validator_derive::*;
 
 #[derive(Debug)]
 pub struct ValidationError {
-    message: &'static str,
+    message: String,
+    field: &'static str,
 }
 
 impl ValidationError {
-    fn new(message: &'static str) -> Self {
-        Self { message }
+    pub fn new(message: String, field: &'static str) -> Self {
+        Self { message, field }
     }
 }
 
@@ -16,5 +17,5 @@ pub fn is_enum(current_value: &str, values: Vec<&'static str>) -> bool {
 }
 
 pub trait Validate {
-    fn validate(&self) -> Result<(), ValidationError>;
+    fn validate(&self) -> Result<(), Vec<ValidationError>>;
 }

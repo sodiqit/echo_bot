@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, env, fs};
-use validator::{Validate, ValidationError};
+use std::{env, fs};
+use validator::Validate;
 
 pub struct ConfigBuilder {
     file_path: Option<String>,
@@ -9,6 +9,7 @@ pub struct ConfigBuilder {
 
 #[derive(Serialize, Validate, Deserialize, Debug)]
 pub struct Config {
+    #[validate(is_enum("console", "telegram"))]
     mode: String,
 }
 
@@ -51,15 +52,12 @@ impl ConfigBuilder {
             .map_err(|e| format!("Parse config failed: {}", e))
             .unwrap();
 
-        config
-    }
+        let validate_result = config.validate();
 
-    fn validate(&self, config: &Config) {
-        let iterable_headers: HashMap<String, String> =
-            serde_yaml::from_value(serde_yaml::to_value(config).unwrap()).unwrap();
-
-        for header in &iterable_headers {
-            println!("{:?}", header);
+        if let Err(errors) = validate_result {
+            panic!("Config is invalid: {:?}", errors);
         }
+
+        config
     }
 }

@@ -8,5 +8,4 @@ fn main() {
         .extract_config_body()
         .build();
 
-    println!("{:?}", config);
 }
