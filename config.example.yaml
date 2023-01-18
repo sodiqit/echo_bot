@@ -3,3 +3,4 @@ mode:
 help_msg: "help message"
 repeat_msg: "repeat message"
 default_repeat_number: 1 # i32
+log_level: Info # Debug > Info > Warn > Error

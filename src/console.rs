@@ -1,8 +1,9 @@
 use crate::commands::{Commands, ToCommands};
 use crate::config::Config;
+use crate::logger::Logger;
 
 struct State {
-    pub repeat_number: Option<i32>,
+    pub repeat_number: Option<u32>,
     pub is_await_repeat_number: bool,
 }
 
@@ -15,13 +16,13 @@ impl State {
     }
 }
 
-pub fn run_bot(config: &Config) {
+pub fn run_bot<T: Logger>(config: &Config, logger: &T) {
     let mut state = State::new();
 
     loop {
         let input = get_user_message();
 
-        let response = respond_user(input, &mut state, config);
+        let response = respond_user(input, &mut state, config, logger);
 
         if let Some(answer) = response {
             println!("{}", answer);
@@ -31,7 +32,12 @@ pub fn run_bot(config: &Config) {
     }
 }
 
-fn respond_user(input: String, state: &mut State, config: &Config) -> Option<String> {
+fn respond_user<T: Logger>(
+    input: String,
+    state: &mut State,
+    config: &Config,
+    logger: &T,
+) -> Option<String> {
     let command = input.to_commands();
 
     if let Commands::Exit = command {
@@ -39,12 +45,14 @@ fn respond_user(input: String, state: &mut State, config: &Config) -> Option<Str
     }
 
     if state.is_await_repeat_number {
-        return Some(extract_repeat_count(input, state));
+        return Some(extract_repeat_count(input, state, logger));
     }
 
     if !input.is_command() {
-        return Some(construct_repeated_message(input.as_str(), state, config));
+        return Some(construct_repeated_message(input.as_str(), state, config, logger));
     }
+
+    logger.log_debug(format!("handle user command: {:?}", command).as_str());
 
     match command {
         Commands::Help => Some(config.help_msg.clone()),
@@ -56,15 +64,25 @@ fn respond_user(input: String, state: &mut State, config: &Config) -> Option<Str
                 config.repeat_msg
             ))
         }
-        Commands::Unknown => Some(format!(
-            "Unknown command: {}. Supported commands: /help, /repeat, /exit",
-            input
-        )),
+        Commands::Unknown => {
+            let response = format!(
+                "Unknown command: {}. Supported commands: /help, /repeat, /exit",
+                input
+            );
+            logger.log_warn(&response);
+            Some(response)
+        }
         Commands::Exit => unreachable!(),
     }
 }
 
-fn construct_repeated_message(input: &str, state: &mut State, config: &Config) -> String {
+fn construct_repeated_message<T: Logger>(
+    input: &str,
+    state: &mut State,
+    config: &Config,
+    logger: &T,
+) -> String {
+    logger.log_info(format!("respond to user input: {}", input).as_str());
     let count = state.repeat_number.unwrap_or(config.default_repeat_number);
 
     (0..count - 1)
@@ -83,16 +101,18 @@ fn get_user_message() -> String {
     input
 }
 
-fn extract_repeat_count(input: String, state: &mut State) -> String {
+fn extract_repeat_count<T: Logger>(input: String, state: &mut State, logger: &T) -> String {
     let error = "Try again input number".to_string();
-    let count: i32 = match input.parse() {
+    let count: u32 = match input.parse() {
         Ok(res) => {
             if res == 0 {
+                logger.log_warn("input number can't be zero");
                 return error;
             }
             res
         }
-        Err(_) => {
+        Err(e) => {
+            logger.log_warn(format!("failed parsing: {:?}", e).as_str());
             return error;
         }
     };
@@ -105,38 +125,51 @@ fn extract_repeat_count(input: String, state: &mut State) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::{BotMode, ConfigBuilder};
+    use crate::{
+        config::{BotMode, ConfigBuilder},
+        logger::LogLevel,
+    };
 
     use super::*;
+
+    #[derive(Default)]
+    struct MockLogger {}
+
+    impl Logger for MockLogger {
+        fn log(&self, _log_level: LogLevel, _msg: &str) {}
+    }
 
     #[test]
     fn should_success_return_help_msg() {
         let mut state = State::new();
+        let logger = MockLogger::default();
         let input = "/help".to_string();
         let config = ConfigBuilder::build_default(BotMode::Console);
 
-        let response = respond_user(input, &mut state, &config);
+        let response = respond_user(input, &mut state, &config, &logger);
         assert_eq!(response, Some("help msg".to_string()));
     }
 
     #[test]
     fn should_return_none_if_provide_exit_command() {
         let mut state = State::new();
+        let logger = MockLogger::default();
         let input = "/exit".to_string();
         let config = ConfigBuilder::build_default(BotMode::Console);
 
-        let response = respond_user(input, &mut state, &config);
+        let response = respond_user(input, &mut state, &config, &logger);
         assert_eq!(response, None);
     }
 
     #[test]
     fn should_return_error_if_provided_unknown_command() {
         let mut state = State::new();
+        let logger = MockLogger::default();
         let input = "/unknown".to_string();
         let input_clone = input.clone();
         let config = ConfigBuilder::build_default(BotMode::Console);
 
-        let response = respond_user(input, &mut state, &config);
+        let response = respond_user(input, &mut state, &config, &logger);
         assert_eq!(
             response,
             Some(format!(
@@ -149,26 +182,28 @@ mod tests {
     #[test]
     fn should_success_repeat_message_with_default_repeat_count() {
         let mut state = State::new();
+        let logger = MockLogger::default();
         let input = "test".to_string();
         let config = ConfigBuilder::build_default(BotMode::Console);
 
-        let response = respond_user(input, &mut state, &config);
+        let response = respond_user(input, &mut state, &config, &logger);
         assert_eq!(response, Some("test".to_string()));
     }
 
     #[test]
     fn should_return_error_if_provided_invalid_number() {
         let mut state = State::new();
+        let logger = MockLogger::default();
         let input = "/repeat".to_string();
         let config = ConfigBuilder::build_default(BotMode::Console);
 
-        respond_user(input, &mut state, &config);
+        respond_user(input, &mut state, &config, &logger);
 
-        let response1 = respond_user("0".to_string(), &mut state, &config);
+        let response1 = respond_user("0".to_string(), &mut state, &config, &logger);
         assert_eq!(response1, Some("Try again input number".to_string()));
         assert_eq!(state.repeat_number, None);
 
-        let response2 = respond_user("txt".to_string(), &mut state, &config);
+        let response2 = respond_user("txt".to_string(), &mut state, &config, &logger);
         assert_eq!(response2, Some("Try again input number".to_string()));
         assert_eq!(state.repeat_number, None);
     }
@@ -176,10 +211,11 @@ mod tests {
     #[test]
     fn should_success_change_repeat_number() {
         let mut state = State::new();
+        let logger = MockLogger::default();
         let input = "/repeat".to_string();
         let config = ConfigBuilder::build_default(BotMode::Console);
 
-        let response1 = respond_user(input, &mut state, &config);
+        let response1 = respond_user(input, &mut state, &config, &logger);
         assert_eq!(
             response1,
             Some(format!(
@@ -188,7 +224,7 @@ mod tests {
             ))
         );
 
-        let response2 = respond_user("3".to_string(), &mut state, &config);
+        let response2 = respond_user("3".to_string(), &mut state, &config, &logger);
         assert_eq!(
             response2,
             Some("Repeat message count currently is: 3".to_string())
@@ -199,12 +235,13 @@ mod tests {
     #[test]
     fn should_success_repeat_message_after_change_number() {
         let mut state = State::new();
+        let logger = MockLogger::default();
         let input = "/repeat".to_string();
         let config = ConfigBuilder::build_default(BotMode::Console);
 
-        respond_user(input, &mut state, &config);
-        respond_user("2".to_string(), &mut state, &config);
-        let response = respond_user("test".to_string(), &mut state, &config);
+        respond_user(input, &mut state, &config, &logger);
+        respond_user("2".to_string(), &mut state, &config, &logger);
+        let response = respond_user("test".to_string(), &mut state, &config, &logger);
         assert_eq!(response, Some("test\ntest".to_string()));
     }
 }

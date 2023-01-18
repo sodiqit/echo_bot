@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::{env, fs};
+use crate::logger::LogLevel;
 
 pub struct ConfigBuilder {
     file_path: Option<String>,
@@ -19,7 +20,8 @@ pub struct Config {
     pub mode: BotMode,
     pub help_msg: String,
     pub repeat_msg: String,
-    pub default_repeat_number: i32,
+    pub default_repeat_number: u32,
+    pub log_level: LogLevel,
 }
 
 impl ConfigBuilder {
@@ -71,6 +73,7 @@ impl ConfigBuilder {
             help_msg: "help msg".to_string(),
             repeat_msg: "repeat msg".to_string(),
             default_repeat_number: 1,
+            log_level: LogLevel::Debug,
         }
     }
 }
