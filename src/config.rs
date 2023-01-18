@@ -23,6 +23,7 @@ pub struct Config {
 }
 
 impl ConfigBuilder {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         ConfigBuilder {
             file_path: Some("config.yaml".to_string()),
@@ -62,5 +63,14 @@ impl ConfigBuilder {
             .unwrap();
 
         config
+    }
+
+    pub fn build_default(mode: BotMode) -> Config {
+        Config {
+            mode,
+            help_msg: "help msg".to_string(),
+            repeat_msg: "repeat msg".to_string(),
+            default_repeat_number: 1,
+        }
     }
 }

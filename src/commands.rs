@@ -21,6 +21,6 @@ impl ToCommands for String {
     }
 
     fn is_command(&self) -> bool {
-        self.starts_with("/")
+        self.starts_with('/')
     }
 }
