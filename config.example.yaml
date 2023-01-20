@@ -2,5 +2,6 @@ mode:
     console # console | telegram
 help_msg: "help message"
 repeat_msg: "repeat message"
-default_repeat_number: 1 # i32
+default_repeat_number: 1 # u32
+bot_token: token # only need if bot started in telegram mode
 log_level: Info # Debug > Info > Warn > Error

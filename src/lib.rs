@@ -1,7 +1,8 @@
 pub mod config;
+pub mod logger;
 mod commands;
 mod console;
-pub mod logger;
+mod telegram;
 
 use config::{BotMode, Config};
 use logger::Logger;
@@ -14,7 +15,7 @@ pub fn run_bot<T: Logger>(config: Config, logger: &T) {
         },
         BotMode::Telegram => {
             logger.log_info("start telegram bot");
-            todo!()
+            telegram::run_bot(&config, logger);
         }
     }
 }
