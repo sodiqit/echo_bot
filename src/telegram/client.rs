@@ -3,12 +3,13 @@ use ureq::Response;
 
 use crate::logger::Logger;
 
-use super::client_types::{ClientError, RawUpdate, TelegramResponse};
+use super::client_types::{ClientError, Message, Payload, RawUpdate, TelegramResponse};
 
 pub trait TelegramClient {
     type T;
     type E;
     fn get_updates(&self, offset: u64) -> Result<Self::T, Self::E>;
+    fn send(&self, chat_id: u64, payload: Payload) -> Result<Message, Self::E>;
 }
 
 pub struct TelegramHttpClient<'a, 'b, L: Logger> {
@@ -47,13 +48,43 @@ impl<'a, 'b, L: Logger> TelegramClient for TelegramHttpClient<'a, 'b, L> {
     type E = ClientError;
 
     fn get_updates(&self, offset: u64) -> Result<Self::T, Self::E> {
-        let response = ureq::get(self.url("getUpdate").as_str())
+        let response = ureq::get(self.url("getUpdates").as_str())
             .query("offset", offset.to_string().as_str())
             .call();
 
         self.logger
-            .log_info(format!("get updates with current offset {}", offset).as_str());
+            .log_info(format!("get updates with current offset: {}", offset).as_str());
 
-        self.parse(response)
+        let response: Result<Self::T, Self::E> = self.parse(response);
+
+        self.logger
+            .log_debug(format!("get response from getUpdates: {:#?}", response).as_str());
+
+        response
+    }
+
+    fn send(&self, chat_id: u64, payload: Payload) -> Result<Message, Self::E> {
+        let body;
+        let method;
+
+        match payload {
+            Payload::Text(text) => {
+                body = ureq::json!({"chat_id": chat_id, "text": text});
+                method = "sendMessage";
+            }
+            Payload::Video(file_id) => {
+                body = ureq::json!({"chat_id": chat_id, "video": file_id});
+                method = "sendVideo";
+            }
+        }
+
+        let response = ureq::post(self.url(method).as_str()).send_json(body);
+
+        let response: Result<Message, ClientError> = self.parse(response);
+
+        self.logger
+            .log_debug(format!("get response from {}: {:#?}", method, response).as_str());
+
+        response
     }
 }

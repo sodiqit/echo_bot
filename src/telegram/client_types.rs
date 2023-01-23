@@ -31,5 +31,35 @@ pub struct TelegramApiError {
 
 #[derive(Deserialize, Debug)]
 pub struct RawUpdate {
-    update_id: u64,
+    pub update_id: u64,
+    pub message: Option<Message>
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Message {
+    pub chat: Chat,
+    pub from: Option<User>,
+    pub video: Option<Video>,
+    pub text: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct User {
+    pub id: u64,
+    pub is_bot: bool,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Chat {
+    pub id: u64,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Video {
+    pub file_id: String,
+}
+
+pub enum Payload<'a> {
+    Text(&'a str),
+    Video(&'a str),
 }
