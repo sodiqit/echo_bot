@@ -3,7 +3,7 @@ use crate::config::Config;
 use crate::logger::Logger;
 
 struct State {
-    pub repeat_number: Option<u32>,
+    pub repeat_number: Option<u8>,
     pub is_await_repeat_number: bool,
 }
 
@@ -103,7 +103,7 @@ fn get_user_message() -> String {
 
 fn extract_repeat_count<T: Logger>(input: String, state: &mut State, logger: &T) -> String {
     let error = "Try again input number".to_string();
-    let count: u32 = match input.parse() {
+    let count: u8 = match input.parse() {
         Ok(res) => {
             if res == 0 {
                 logger.log_warn("input number can't be zero");

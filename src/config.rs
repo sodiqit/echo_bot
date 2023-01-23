@@ -15,13 +15,14 @@ pub enum BotMode {
     Console,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     pub mode: BotMode,
     pub help_msg: String,
     pub repeat_msg: String,
-    pub default_repeat_number: u32,
+    pub default_repeat_number: u8,
     pub log_level: LogLevel,
+    pub bot_token: Option<String> //TODO: add validator for Telegram mode 
 }
 
 impl ConfigBuilder {
@@ -73,6 +74,7 @@ impl ConfigBuilder {
             help_msg: "help msg".to_string(),
             repeat_msg: "repeat msg".to_string(),
             default_repeat_number: 1,
+            bot_token: Some("test".to_string()),
             log_level: LogLevel::Debug,
         }
     }
