@@ -26,10 +26,12 @@ cargo test
 
 ### commands
 
-`/help` - print message from config(help_msg).
-`/repeat` - print message from config(repeat_msg) with current value repeat number. If mode set to `console`. User must type integer(must be greater then 0). If mode set to `telegram` - user can choice number from inline keyboard in chat with bot.
+* `/help` - print message from config(help_msg).
+* `/repeat` - print message from config(repeat_msg) with current value repeat number. If mode set to `console`. User must type integer(must be greater then 0). If mode set to `telegram` - user can choice number from inline keyboard in chat with bot.
 
 For only `console` mode user can use `/exit` command to disable bot.
+
+`telegram` mode support plain text and video messages.
 
 ### configurable
 
