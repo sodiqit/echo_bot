@@ -1,7 +1,7 @@
 use serde::Serialize;
 use serde_json::json;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct InlineKeyboardMarkup {
     rows: Vec<Vec<InlineKeyboardButton>>,
 }
@@ -23,7 +23,7 @@ impl InlineKeyboardMarkup {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct InlineKeyboardButton {
     text: String,
     callback_data: String,

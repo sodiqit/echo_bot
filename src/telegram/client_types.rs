@@ -33,14 +33,14 @@ pub struct TelegramApiError {
     description: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct RawUpdate {
     pub update_id: u64,
     pub message: Option<Message>,
     pub callback_query: Option<CallbackQuery>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Message {
     pub chat: Chat,
     pub from: Option<User>,
@@ -48,25 +48,25 @@ pub struct Message {
     pub text: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct CallbackQuery {
     pub id: String,
     pub message: Message,
     pub data: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct User {
     pub id: u64,
     pub is_bot: bool,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Chat {
     pub id: u64,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Video {
     pub file_id: String,
 }
@@ -77,6 +77,7 @@ pub enum Payload<'a> {
     TextWithKeyboard(InlineKeyboardMarkup, &'a str),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TelegramCommand {
     pub command: Command,
     pub description: String,
