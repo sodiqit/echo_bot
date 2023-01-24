@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use super::keyboard::InlineKeyboardMarkup;
+
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum TelegramResponse<T> {
@@ -8,7 +10,7 @@ pub enum TelegramResponse<T> {
 }
 
 impl<T> TelegramResponse<T> {
-    pub fn to_result(self) -> Result<T, ClientError> {
+    pub fn into_result(self) -> Result<T, ClientError> {
         match self {
             Self::Success { result } => Ok(result),
             Self::Failure(error) => Err(ClientError::Api(error)),
@@ -32,7 +34,8 @@ pub struct TelegramApiError {
 #[derive(Deserialize, Debug)]
 pub struct RawUpdate {
     pub update_id: u64,
-    pub message: Option<Message>
+    pub message: Option<Message>,
+    pub callback_query: Option<CallbackQuery>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -41,6 +44,13 @@ pub struct Message {
     pub from: Option<User>,
     pub video: Option<Video>,
     pub text: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct CallbackQuery {
+    pub id: String,
+    pub message: Message,
+    pub data: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -62,4 +72,5 @@ pub struct Video {
 pub enum Payload<'a> {
     Text(&'a str),
     Video(&'a str),
+    TextWithKeyboard(InlineKeyboardMarkup, &'a str),
 }

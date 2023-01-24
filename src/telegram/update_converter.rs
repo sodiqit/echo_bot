@@ -9,9 +9,20 @@ pub enum TelegramUpdate {
         chat_id: u64,
         content: MessageContent,
     },
+    CallbackQuery {
+        update_id: u64,
+        chat_id: u64,
+        content: CallbackData,
+    },
     Ignore {
         update_id: u64,
     },
+}
+
+#[derive(Debug)]
+pub struct CallbackData {
+    pub id: String,
+    pub data: String,
 }
 
 #[derive(Debug)]
@@ -91,6 +102,17 @@ impl ToTelegramUpdate for RawUpdate {
                     },
                 };
             }
+        }
+
+        if let Some(query) = &self.callback_query {
+            return TelegramUpdate::CallbackQuery {
+                update_id: self.update_id,
+                chat_id: query.message.chat.id,
+                content: CallbackData {
+                    id: query.id.clone(),
+                    data: query.data.clone(),
+                },
+            };
         }
 
         TelegramUpdate::Ignore {

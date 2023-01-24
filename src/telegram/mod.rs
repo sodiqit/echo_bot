@@ -3,6 +3,7 @@ pub mod client_types;
 mod handler;
 mod response_parser;
 mod update_converter;
+mod keyboard;
 
 use std::{thread::sleep, time::Duration};
 

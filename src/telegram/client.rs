@@ -1,4 +1,5 @@
 use serde::de::DeserializeOwned;
+use serde_json::json;
 use ureq::Response;
 
 use crate::logger::Logger;
@@ -10,6 +11,7 @@ pub trait TelegramClient {
     type E;
     fn get_updates(&self, offset: u64) -> Result<Self::T, Self::E>;
     fn send(&self, chat_id: u64, payload: Payload) -> Result<Message, Self::E>;
+    fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, Self::E>;
 }
 
 pub struct TelegramHttpClient<'a, 'b, L: Logger> {
@@ -39,7 +41,7 @@ impl<'a, 'b, L: Logger> TelegramHttpClient<'a, 'b, L> {
             .map_err(|e| ClientError::Http(Box::new(e)))?
             .into_json::<TelegramResponse<T>>()
             .map_err(ClientError::Serialize)?
-            .to_result()
+            .into_result()
     }
 }
 
@@ -76,6 +78,12 @@ impl<'a, 'b, L: Logger> TelegramClient for TelegramHttpClient<'a, 'b, L> {
                 body = ureq::json!({"chat_id": chat_id, "video": file_id});
                 method = "sendVideo";
             }
+            Payload::TextWithKeyboard(keyboard, text) => {
+                body = json!({"chat_id": chat_id, "text": text, "reply_markup": {
+                    "inline_keyboard": keyboard.into_json()
+                }});
+                method = "sendMessage";
+            }
         }
 
         let response = ureq::post(self.url(method).as_str()).send_json(body);
@@ -86,5 +94,15 @@ impl<'a, 'b, L: Logger> TelegramClient for TelegramHttpClient<'a, 'b, L> {
             .log_debug(format!("get response from {}: {:#?}", method, response).as_str());
 
         response
+    }
+
+    fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, ClientError> {
+        let response = ureq::post(self.url("answerCallbackQuery").as_str())
+            .send_json(json!({"callback_query_id": id, "text": text}));
+
+        self.logger
+            .log_debug(format!("get response from answerCallbackQuery: {:#?}", response).as_str());
+
+        self.parse(response)
     }
 }
