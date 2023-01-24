@@ -1,5 +1,4 @@
-mode:
-    console # console | telegram
+mode: console # console | telegram
 help_msg: "help message"
 repeat_msg: "repeat message"
 default_repeat_number: 1 # u32
