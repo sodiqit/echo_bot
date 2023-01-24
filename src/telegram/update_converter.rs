@@ -32,6 +32,13 @@ pub enum MessageContent {
     Text(String),
 }
 
+// It doesn't feel like this trait pulls its weight.
+// I'd rather just
+impl TelegramUpdate {
+    pub fn from_raw(raw: RawUpdate) {}
+}
+// Alternatively, `impl From<RawUpdate> for TelegramUpdate`
+
 pub trait ToTelegramUpdate {
     fn to_tg_update(self) -> TelegramUpdate;
 }

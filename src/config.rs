@@ -22,7 +22,7 @@ pub struct Config {
     pub repeat_msg: String,
     pub default_repeat_number: u8,
     pub log_level: LogLevel,
-    pub bot_token: Option<String> //TODO: add validator for Telegram mode 
+    pub bot_token: Option<String> //TODO: add validator for Telegram mode
 }
 
 impl ConfigBuilder {
@@ -46,9 +46,13 @@ impl ConfigBuilder {
 
     pub fn extract_config_body(mut self) -> Self {
         let mut path = env::current_dir().expect("Cannot get current directory");
+        // This unwrap is a code smell -- it signals that there might be a
+        // better way to write this, which would avoid unwrap altogether.
         path.push(self.file_path.as_ref().unwrap());
 
         let content = fs::read_to_string(path).unwrap_or_else(|_| {
+            // Panics are a passable, but not great way to handle errors. It's
+            // better to use `?` here and elsewhere to bubble the error up.
             panic!(
                 "Cannot read file with current path: {}",
                 self.file_path.as_ref().unwrap()

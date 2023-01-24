@@ -27,7 +27,7 @@ pub trait ToCommands {
 }
 
 impl ToCommands for String {
-    fn to_commands(&self) -> Command {
+    fn to_commands(&self) -> Command { // I think you rather want to `impl FromStr for Command`
         match self.as_str() {
             "/help" => Command::Help,
             "/exit" => Command::Exit,

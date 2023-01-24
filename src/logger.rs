@@ -1,8 +1,10 @@
+//! Nice module!
+
 use chrono::Utc;
 use colored::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Serialize, Clone, Deserialize, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Serialize, Clone, Deserialize, Eq, PartialOrd, Ord)] // This probably wants :Copy as well.
 pub enum LogLevel {
     Debug,
     Info,
@@ -77,6 +79,7 @@ impl Logger for ConsoleLogger {
 }
 
 impl ConsoleLogger {
+    // I'd call this `new`.
     pub fn init(level: LogLevel) -> Self {
         Self {
             log_level_for_output: level,
