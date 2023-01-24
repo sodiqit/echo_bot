@@ -13,7 +13,7 @@ To launch app create `config.yaml` see `./config.example.yaml` and use `cargo ru
 `If you config.yaml file is in a different location from the root dir - you can pass relative path via env args`:
 
 ```sh
-cargo run -- --config directory/config.yaml
+cargo run -- directory/config.yaml
 ```
 
 Run tests:
