@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{commands::Commands, config::Config, logger::Logger};
+use crate::{commands::Command, config::Config, logger::Logger};
 
 use super::{
     client::TelegramClient,
@@ -71,15 +71,15 @@ impl<'a, 'b, L: Logger, T: TelegramClient> TelegramHandler<'a, 'b, L, T> {
         &self,
         state: &mut TelegramState,
         config: &Config,
-        command: Commands,
+        command: Command,
         initial_msg: String,
         chat_id: u64,
     ) -> Result<(), T::E> {
         match command {
-            Commands::Help => {
+            Command::Help => {
                 self.client.send(chat_id, Payload::Text(&config.help_msg))?;
             }
-            Commands::Repeat => {
+            Command::Repeat => {
                 let repeat_number = state
                     .repeat_numbers
                     .get(&chat_id)
@@ -93,7 +93,7 @@ impl<'a, 'b, L: Logger, T: TelegramClient> TelegramHandler<'a, 'b, L, T> {
                     Payload::TextWithKeyboard(self.construct_inline_keyboard(), &msg),
                 )?;
             }
-            Commands::Unknown => {
+            Command::Unknown => {
                 let msg = format!("get unknown command: {}", initial_msg);
                 self.logger.log_warn(&msg);
                 self.client.send(chat_id, Payload::Text(&msg))?;

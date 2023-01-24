@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use crate::commands::Command;
+
 use super::keyboard::InlineKeyboardMarkup;
 
 #[derive(Deserialize, Debug)]
@@ -73,4 +75,18 @@ pub enum Payload<'a> {
     Text(&'a str),
     Video(&'a str),
     TextWithKeyboard(InlineKeyboardMarkup, &'a str),
+}
+
+pub struct TelegramCommand {
+    pub command: Command,
+    pub description: String,
+}
+
+impl TelegramCommand {
+    pub fn new(command: Command, description: String) -> Self {
+        Self {
+            command,
+            description,
+        }
+    }
 }

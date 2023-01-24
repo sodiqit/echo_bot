@@ -1,4 +1,4 @@
-use crate::commands::{Commands, ToCommands};
+use crate::commands::{Command, ToCommands};
 
 use super::client_types::RawUpdate;
 
@@ -27,7 +27,7 @@ pub struct CallbackData {
 
 #[derive(Debug)]
 pub enum MessageContent {
-    Command(Commands, String),
+    Command(Command, String),
     Video { file_id: String },
     Text(String),
 }
@@ -58,28 +58,25 @@ impl ToTelegramUpdate for RawUpdate {
                     let command = text.to_commands();
 
                     match command {
-                        Commands::Help => {
+                        Command::Help => {
                             return TelegramUpdate::Message {
                                 update_id: self.update_id,
                                 chat_id: msg.chat.id,
-                                content: MessageContent::Command(Commands::Help, text.to_owned()),
+                                content: MessageContent::Command(Command::Help, text.to_owned()),
                             }
                         }
-                        Commands::Repeat => {
+                        Command::Repeat => {
                             return TelegramUpdate::Message {
                                 update_id: self.update_id,
                                 chat_id: msg.chat.id,
-                                content: MessageContent::Command(Commands::Repeat, text.to_owned()),
+                                content: MessageContent::Command(Command::Repeat, text.to_owned()),
                             }
                         }
-                        Commands::Unknown => {
+                        Command::Unknown => {
                             return TelegramUpdate::Message {
                                 update_id: self.update_id,
                                 chat_id: msg.chat.id,
-                                content: MessageContent::Command(
-                                    Commands::Unknown,
-                                    text.to_owned(),
-                                ),
+                                content: MessageContent::Command(Command::Unknown, text.to_owned()),
                             }
                         }
                         _ => {}

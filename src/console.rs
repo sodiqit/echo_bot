@@ -1,4 +1,4 @@
-use crate::commands::{Commands, ToCommands};
+use crate::commands::{Command, ToCommands};
 use crate::config::Config;
 use crate::logger::Logger;
 
@@ -40,7 +40,7 @@ fn respond_user<T: Logger>(
 ) -> Option<String> {
     let command = input.to_commands();
 
-    if let Commands::Exit = command {
+    if let Command::Exit = command {
         return None;
     }
 
@@ -49,14 +49,19 @@ fn respond_user<T: Logger>(
     }
 
     if !input.is_command() {
-        return Some(construct_repeated_message(input.as_str(), state, config, logger));
+        return Some(construct_repeated_message(
+            input.as_str(),
+            state,
+            config,
+            logger,
+        ));
     }
 
     logger.log_debug(format!("handle user command: {:?}", command).as_str());
 
     match command {
-        Commands::Help => Some(config.help_msg.clone()),
-        Commands::Repeat => {
+        Command::Help => Some(config.help_msg.clone()),
+        Command::Repeat => {
             state.is_await_repeat_number = true;
             Some(format!(
                 "Currently repeat set: {}. {}",
@@ -64,7 +69,7 @@ fn respond_user<T: Logger>(
                 config.repeat_msg
             ))
         }
-        Commands::Unknown => {
+        Command::Unknown => {
             let response = format!(
                 "Unknown command: {}. Supported commands: /help, /repeat, /exit",
                 input
@@ -72,7 +77,7 @@ fn respond_user<T: Logger>(
             logger.log_warn(&response);
             Some(response)
         }
-        Commands::Exit => unreachable!(),
+        Command::Exit => unreachable!(),
     }
 }
 

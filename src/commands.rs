@@ -1,23 +1,38 @@
 #[derive(Debug)]
-pub enum Commands {
+pub enum Command {
+    Exit,
     Help,
     Repeat,
-    Exit,
     Unknown,
 }
 
+impl Command {
+    pub fn new(input: &str) -> Command {
+        input.to_string().to_commands()
+    }
+
+    pub fn into_string(self) -> String {
+        match self {
+            Command::Help => "/help".to_string(),
+            Command::Exit => "/exit".to_string(),
+            Command::Repeat => "/repeat".to_string(),
+            Command::Unknown => "".to_string(),
+        }
+    }
+}
+
 pub trait ToCommands {
-    fn to_commands(&self) -> Commands;
+    fn to_commands(&self) -> Command;
     fn is_command(&self) -> bool;
 }
 
 impl ToCommands for String {
-    fn to_commands(&self) -> Commands {
+    fn to_commands(&self) -> Command {
         match self.as_str() {
-            "/help" => Commands::Help,
-            "/exit" => Commands::Exit,
-            "/repeat" => Commands::Repeat,
-            _ => Commands::Unknown,
+            "/help" => Command::Help,
+            "/exit" => Command::Exit,
+            "/repeat" => Command::Repeat,
+            _ => Command::Unknown,
         }
     }
 
