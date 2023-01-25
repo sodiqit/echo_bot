@@ -9,7 +9,7 @@ use super::client_types::{
 };
 
 pub trait TelegramClient {
-    type E;
+    type E; // Error would be a mode idiomatic name here.
     fn get_updates(&self, offset: u64) -> Result<Vec<RawUpdate>, Self::E>;
     fn send(&self, chat_id: u64, payload: Payload) -> Result<Message, Self::E>;
     fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, Self::E>;
@@ -17,7 +17,8 @@ pub trait TelegramClient {
 }
 
 pub struct TelegramHttpClient<'a, 'b, L: Logger> {
-    token: &'b str,
+    token: &'b str, // Given that we'll be doing HTTP calls anyway, cloning str's should be fine here.
+                    // So, `token: String, base_url: String` wold remove one extra lifetime.
     logger: &'a L,
     base_url: &'b str,
 }

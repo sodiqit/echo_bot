@@ -22,13 +22,8 @@ pub fn run_bot<T: Logger>(config: &Config, logger: &T) {
     loop {
         let input = get_user_message();
 
-        let response = respond_user(input, &mut state, config, logger);
-
-        if let Some(answer) = response {
-            println!("{}", answer);
-        } else {
-            break;
-        }
+        let Some(response) = respond_user(input, &mut state, config, logger) else { break }; // fancy new syntax.
+        println!("{answer}");
     }
 }
 
@@ -90,23 +85,34 @@ fn construct_repeated_message<T: Logger>(
     logger.log_info(format!("respond to user input: {}", input).as_str());
     let count = state.repeat_number.unwrap_or(config.default_repeat_number);
 
+
+    // Don't really love this loop, for two reasons:
+    //  - folds in general are hard to read
+    //  - it does a lot of intermediate allocations
     (0..count - 1)
         .into_iter()
         .fold(input.to_owned(), |mut acc, _| {
             acc.push_str(format!("\n{}", input).as_str());
             acc
-        })
+        });
+    // I'd probably try to keep that super simple:
+    let mut result = input.to_string();
+    for _ in 0..count - 1 {
+        result.push_str("\n");
+        result.push_str(input);
+    }
+    result
 }
 
 fn get_user_message() -> String {
     let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
+    std::io::stdin().read_line(&mut input).unwrap(); // Again, better to `?` this error.
     input = input.trim().to_string();
 
     input
 }
 
-fn extract_repeat_count<T: Logger>(input: String, state: &mut State, logger: &T) -> String {
+fn extract_repeat_count<T: Logger>(input: &str, state: &mut State, logger: &T) -> String {
     let error = "Try again input number".to_string();
     let count: u8 = match input.parse() {
         Ok(res) => {
