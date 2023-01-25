@@ -6,7 +6,7 @@ use super::{
     client::TelegramClient,
     client_types::{Payload, RawUpdate},
     keyboard::{InlineKeyboardButton, InlineKeyboardMarkup},
-    update_converter::{CallbackData, MessageContent, TelegramUpdate, ToTelegramUpdate},
+    update_converter::{CallbackData, MessageContent, TelegramUpdate},
 };
 
 pub trait Handler<T: TelegramClient> {
@@ -15,7 +15,7 @@ pub trait Handler<T: TelegramClient> {
         config: &Config,
         state: &mut TelegramState,
         raw_update: RawUpdate,
-    ) -> Result<(), T::E>;
+    ) -> Result<(), T::Err>;
 }
 
 pub struct TelegramState {
@@ -36,13 +36,13 @@ impl TelegramState {
     }
 }
 
-pub struct TelegramHandler<'a, 'b, L: Logger, T: TelegramClient> {
-    logger: &'a L,
+pub struct TelegramHandler<'a, 'b, T: TelegramClient> {
+    logger: &'a dyn Logger,
     client: &'b T,
 }
 
-impl<'a, 'b, L: Logger, T: TelegramClient> TelegramHandler<'a, 'b, L, T> {
-    pub fn new(logger: &'a L, client: &'b T) -> Self {
+impl<'a, 'b, T: TelegramClient> TelegramHandler<'a, 'b, T> {
+    pub fn new(logger: &'a dyn Logger, client: &'b T) -> Self {
         Self { logger, client }
     }
 
@@ -52,7 +52,7 @@ impl<'a, 'b, L: Logger, T: TelegramClient> TelegramHandler<'a, 'b, L, T> {
         config: &Config,
         message: String,
         chat_id: u64,
-    ) -> Result<(), T::E> {
+    ) -> Result<(), T::Err> {
         let repeat_number = state
             .repeat_numbers
             .get(&chat_id)
@@ -74,7 +74,7 @@ impl<'a, 'b, L: Logger, T: TelegramClient> TelegramHandler<'a, 'b, L, T> {
         command: Command,
         initial_msg: String,
         chat_id: u64,
-    ) -> Result<(), T::E> {
+    ) -> Result<(), T::Err> {
         match command {
             Command::Help => {
                 self.client.send(chat_id, Payload::Text(&config.help_msg))?;
@@ -110,7 +110,7 @@ impl<'a, 'b, L: Logger, T: TelegramClient> TelegramHandler<'a, 'b, L, T> {
         config: &Config,
         file_id: String,
         chat_id: u64,
-    ) -> Result<(), T::E> {
+    ) -> Result<(), T::Err> {
         let repeat_number = state
             .repeat_numbers
             .get(&chat_id)
@@ -130,7 +130,7 @@ impl<'a, 'b, L: Logger, T: TelegramClient> TelegramHandler<'a, 'b, L, T> {
         state: &mut TelegramState,
         chat_id: u64,
         content: CallbackData,
-    ) -> Result<(), T::E> {
+    ) -> Result<(), T::Err> {
         let repeat_number = content.data.parse::<u8>().unwrap(); // this error never not be throw because buttons construct on bot side
 
         state.set_repeat_number(chat_id, repeat_number);
@@ -166,14 +166,14 @@ impl<'a, 'b, L: Logger, T: TelegramClient> TelegramHandler<'a, 'b, L, T> {
     }
 }
 
-impl<'a, 'b, L: Logger, T: TelegramClient> Handler<T> for TelegramHandler<'a, 'b, L, T> {
+impl<'a, 'b, T: TelegramClient> Handler<T> for TelegramHandler<'a, 'b, T> {
     fn handle(
         &self,
         config: &Config,
         state: &mut TelegramState,
         raw_update: RawUpdate,
-    ) -> Result<(), T::E> {
-        let update = raw_update.to_tg_update();
+    ) -> Result<(), T::Err> {
+        let update = raw_update.into();
 
         self.logger
             .log_debug(format!("Receive update: {:#?}", &update).as_str());

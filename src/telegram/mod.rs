@@ -14,9 +14,9 @@ use self::{
 };
 use crate::{commands::Command, config::Config, logger::Logger};
 
-pub fn run_bot(config: &Config, logger: &impl Logger) -> Result<(), ClientError> {
+pub fn run_bot(config: &Config, logger: &dyn Logger) -> Result<(), ClientError> {
     let token = config.bot_token.as_ref().unwrap();
-    let client = TelegramHttpClient::new(token, logger);
+    let client = TelegramHttpClient::new(token.clone(), logger);
     let mut state = TelegramState::new();
     let handler = TelegramHandler::new(logger, &client);
 
@@ -42,7 +42,7 @@ fn communicate<T: TelegramClient, H: Handler<T>>(
     client: &T,
     handler: &H,
     config: &Config,
-) -> Result<(), T::E> {
+) -> Result<(), T::Err> {
     let offset = state.last_update_id.map_or(0, |v| v + 1);
     client
         .get_updates(offset)?
@@ -93,13 +93,13 @@ mod tests {
     }
 
     impl TelegramClient for MockTelegramClient {
-        type E = ();
-        fn get_updates(&self, offset: u64) -> Result<Vec<RawUpdate>, Self::E> {
+        type Err = ();
+        fn get_updates(&self, offset: u64) -> Result<Vec<RawUpdate>, Self::Err> {
             self.handled_ids.borrow_mut().push(offset);
             Ok(self.updates.borrow().clone())
         }
 
-        fn send(&self, chat_id: u64, payload: client_types::Payload) -> Result<Message, Self::E> {
+        fn send(&self, chat_id: u64, payload: client_types::Payload) -> Result<Message, Self::Err> {
             let mut video: Option<Video> = None;
             let mut text: Option<String> = None;
 
@@ -144,7 +144,7 @@ mod tests {
             })
         }
 
-        fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, Self::E> {
+        fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, Self::Err> {
             self.answers_on_callback.borrow_mut().push(CallbackQuery {
                 id: id.to_string(),
                 message: Message {
@@ -159,7 +159,7 @@ mod tests {
             Ok(true)
         }
 
-        fn set_commands(&self, commands: Vec<TelegramCommand>) -> Result<bool, Self::E> {
+        fn set_commands(&self, commands: Vec<TelegramCommand>) -> Result<bool, Self::Err> {
             commands.into_iter().for_each(|command| {
                 self.commands.borrow_mut().push(command);
             });

@@ -77,7 +77,7 @@ impl Logger for ConsoleLogger {
 }
 
 impl ConsoleLogger {
-    pub fn init(level: LogLevel) -> Self {
+    pub fn new(level: LogLevel) -> Self {
         Self {
             log_level_for_output: level,
         }

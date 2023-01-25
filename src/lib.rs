@@ -10,11 +10,14 @@ use config::{BotMode, Config};
 use logger::Logger;
 use telegram::client_types::ClientError;
 
-pub fn run_bot<T: Logger>(config: Config, logger: &T) {
+pub fn run_bot(config: Config, logger: &dyn Logger) {
     match config.mode {
         BotMode::Console => {
             logger.log_info("start console bot");
-            console::run_bot(&config, logger)
+            match console::run_bot(&config, logger) {
+                Ok(_) => {}
+                Err(e) => logger.log_error(format!("io error occurred: {}", e).as_str())
+            }
         }
         BotMode::Telegram => {
             logger.log_info("start telegram bot");

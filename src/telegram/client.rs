@@ -9,25 +9,25 @@ use super::client_types::{
 };
 
 pub trait TelegramClient {
-    type E;
-    fn get_updates(&self, offset: u64) -> Result<Vec<RawUpdate>, Self::E>;
-    fn send(&self, chat_id: u64, payload: Payload) -> Result<Message, Self::E>;
-    fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, Self::E>;
-    fn set_commands(&self, commands: Vec<TelegramCommand>) -> Result<bool, Self::E>;
+    type Err;
+    fn get_updates(&self, offset: u64) -> Result<Vec<RawUpdate>, Self::Err>;
+    fn send(&self, chat_id: u64, payload: Payload) -> Result<Message, Self::Err>;
+    fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, Self::Err>;
+    fn set_commands(&self, commands: Vec<TelegramCommand>) -> Result<bool, Self::Err>;
 }
 
-pub struct TelegramHttpClient<'a, 'b, L: Logger> {
-    token: &'b str,
-    logger: &'a L,
-    base_url: &'b str,
+pub struct TelegramHttpClient<'a> {
+    token: String,
+    logger: &'a dyn Logger,
+    base_url: String,
 }
 
-impl<'a, 'b, L: Logger> TelegramHttpClient<'a, 'b, L> {
-    pub fn new(token: &'b str, logger: &'a L) -> Self {
+impl<'a> TelegramHttpClient<'a> {
+    pub fn new(token: String, logger: &'a dyn Logger) -> Self {
         Self {
             token,
             logger,
-            base_url: "https://api.telegram.org",
+            base_url: "https://api.telegram.org".to_string(),
         }
     }
 
@@ -47,10 +47,10 @@ impl<'a, 'b, L: Logger> TelegramHttpClient<'a, 'b, L> {
     }
 }
 
-impl<'a, 'b, L: Logger> TelegramClient for TelegramHttpClient<'a, 'b, L> {
-    type E = ClientError;
+impl<'a> TelegramClient for TelegramHttpClient<'a> {
+    type Err = ClientError;
 
-    fn get_updates(&self, offset: u64) -> Result<Vec<RawUpdate>, Self::E> {
+    fn get_updates(&self, offset: u64) -> Result<Vec<RawUpdate>, Self::Err> {
         let response = ureq::get(self.url("getUpdates").as_str())
             .query("offset", offset.to_string().as_str())
             .call();
@@ -58,7 +58,7 @@ impl<'a, 'b, L: Logger> TelegramClient for TelegramHttpClient<'a, 'b, L> {
         self.logger
             .log_info(format!("get updates with current offset: {}", offset).as_str());
 
-        let response: Result<Vec<RawUpdate>, Self::E> = self.parse(response);
+        let response: Result<Vec<RawUpdate>, Self::Err> = self.parse(response);
 
         self.logger
             .log_debug(format!("get response from getUpdates: {:#?}", response).as_str());
@@ -66,7 +66,7 @@ impl<'a, 'b, L: Logger> TelegramClient for TelegramHttpClient<'a, 'b, L> {
         response
     }
 
-    fn send(&self, chat_id: u64, payload: Payload) -> Result<Message, Self::E> {
+    fn send(&self, chat_id: u64, payload: Payload) -> Result<Message, Self::Err> {
         let body;
         let method;
 
@@ -97,7 +97,7 @@ impl<'a, 'b, L: Logger> TelegramClient for TelegramHttpClient<'a, 'b, L> {
         response
     }
 
-    fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, ClientError> {
+    fn answer_callback_query(&self, id: &str, text: &str) -> Result<bool, Self::Err> {
         let response = ureq::post(self.url("answerCallbackQuery").as_str())
             .send_json(json!({"callback_query_id": id, "text": text}));
 
@@ -107,7 +107,7 @@ impl<'a, 'b, L: Logger> TelegramClient for TelegramHttpClient<'a, 'b, L> {
         self.parse(response)
     }
 
-    fn set_commands(&self, commands: Vec<TelegramCommand>) -> Result<bool, Self::E> {
+    fn set_commands(&self, commands: Vec<TelegramCommand>) -> Result<bool, Self::Err> {
         let json_commands: Vec<serde_json::Value> = commands
             .into_iter()
             .map(|tg_command| json!({"command": tg_command.command.into_string(), "description": tg_command.description}))

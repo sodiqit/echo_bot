@@ -7,7 +7,7 @@ fn main() {
         .extract_config_body()
         .build();
 
-    let logger = ConsoleLogger::init(config.log_level.clone());
+    let logger = ConsoleLogger::new(config.log_level.clone());
     logger.log_info("logger with config success build");
 
     echo_bot::run_bot(config, &logger);
