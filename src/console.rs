@@ -1,4 +1,4 @@
-use crate::commands::{Command, ToCommands};
+use crate::commands::{Command, IsCommand};
 use crate::config::Config;
 use crate::logger::Logger;
 
@@ -16,36 +16,33 @@ impl State {
     }
 }
 
-pub fn run_bot<T: Logger>(config: &Config, logger: &T) {
+pub fn run_bot(config: &Config, logger: &dyn Logger) -> Result<(), std::io::Error> {
     let mut state = State::new();
 
     loop {
-        let input = get_user_message();
+        let input = get_user_message()?;
 
-        let response = respond_user(input, &mut state, config, logger);
-
-        if let Some(answer) = response {
-            println!("{}", answer);
-        } else {
-            break;
-        }
-    }
+        let Some(response) = respond_user(input, &mut state, config, logger) else { break };
+        println!("{response}");
+    };
+    
+    Ok(())
 }
 
-fn respond_user<T: Logger>(
+fn respond_user(
     input: String,
     state: &mut State,
     config: &Config,
-    logger: &T,
+    logger: &dyn Logger,
 ) -> Option<String> {
-    let command = input.to_commands();
+    let command = input.parse::<Command>().unwrap();
 
     if let Command::Exit = command {
         return None;
     }
 
     if state.is_await_repeat_number {
-        return Some(extract_repeat_count(input, state, logger));
+        return Some(extract_repeat_count(&input, state, logger));
     }
 
     if !input.is_command() {
@@ -81,32 +78,33 @@ fn respond_user<T: Logger>(
     }
 }
 
-fn construct_repeated_message<T: Logger>(
+fn construct_repeated_message(
     input: &str,
     state: &mut State,
     config: &Config,
-    logger: &T,
+    logger: &dyn Logger,
 ) -> String {
     logger.log_info(format!("respond to user input: {}", input).as_str());
     let count = state.repeat_number.unwrap_or(config.default_repeat_number);
+    let mut result = input.to_string();
 
-    (0..count - 1)
-        .into_iter()
-        .fold(input.to_owned(), |mut acc, _| {
-            acc.push_str(format!("\n{}", input).as_str());
-            acc
-        })
+    for _ in 0..count - 1 {
+        result.push_str("\n");
+        result.push_str(input);
+    } 
+
+    result
 }
 
-fn get_user_message() -> String {
+fn get_user_message() -> Result<String, std::io::Error> {
     let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
+    std::io::stdin().read_line(&mut input)?;
     input = input.trim().to_string();
 
-    input
+    Ok(input)
 }
 
-fn extract_repeat_count<T: Logger>(input: String, state: &mut State, logger: &T) -> String {
+fn extract_repeat_count(input: &str, state: &mut State, logger: &dyn Logger) -> String {
     let error = "Try again input number".to_string();
     let count: u8 = match input.parse() {
         Ok(res) => {

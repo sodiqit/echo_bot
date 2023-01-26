@@ -1,4 +1,4 @@
-use crate::commands::{Command, ToCommands};
+use crate::commands::{Command, IsCommand};
 
 use super::client_types::RawUpdate;
 
@@ -32,13 +32,9 @@ pub enum MessageContent {
     Text(String),
 }
 
-pub trait ToTelegramUpdate {
-    fn to_tg_update(self) -> TelegramUpdate;
-}
-
-impl ToTelegramUpdate for RawUpdate {
-    fn to_tg_update(self) -> TelegramUpdate {
-        let is_bot_message = match self.message.as_ref() {
+impl From<RawUpdate> for TelegramUpdate {
+    fn from(value: RawUpdate) -> Self {
+        let is_bot_message = match value.message.as_ref() {
             Some(msg) => match msg.from.as_ref() {
                 Some(user) => user.is_bot,
                 None => false,
@@ -48,33 +44,33 @@ impl ToTelegramUpdate for RawUpdate {
 
         if is_bot_message {
             return TelegramUpdate::Ignore {
-                update_id: self.update_id,
+                update_id: value.update_id,
             };
         }
 
-        if let Some(msg) = &self.message {
+        if let Some(msg) = &value.message {
             if let Some(text) = &msg.text {
                 if text.is_command() {
-                    let command = text.to_commands();
+                    let command = text.parse::<Command>().unwrap();
 
                     match command {
                         Command::Help => {
                             return TelegramUpdate::Message {
-                                update_id: self.update_id,
+                                update_id: value.update_id,
                                 chat_id: msg.chat.id,
                                 content: MessageContent::Command(Command::Help, text.to_owned()),
                             }
                         }
                         Command::Repeat => {
                             return TelegramUpdate::Message {
-                                update_id: self.update_id,
+                                update_id: value.update_id,
                                 chat_id: msg.chat.id,
                                 content: MessageContent::Command(Command::Repeat, text.to_owned()),
                             }
                         }
                         Command::Unknown => {
                             return TelegramUpdate::Message {
-                                update_id: self.update_id,
+                                update_id: value.update_id,
                                 chat_id: msg.chat.id,
                                 content: MessageContent::Command(Command::Unknown, text.to_owned()),
                             }
@@ -84,7 +80,7 @@ impl ToTelegramUpdate for RawUpdate {
                 }
 
                 return TelegramUpdate::Message {
-                    update_id: self.update_id,
+                    update_id: value.update_id,
                     chat_id: msg.chat.id,
                     content: MessageContent::Text(text.clone()),
                 };
@@ -92,7 +88,7 @@ impl ToTelegramUpdate for RawUpdate {
 
             if let Some(video) = msg.video.as_ref() {
                 return TelegramUpdate::Message {
-                    update_id: self.update_id,
+                    update_id: value.update_id,
                     chat_id: msg.chat.id,
                     content: MessageContent::Video {
                         file_id: video.file_id.clone(),
@@ -101,9 +97,9 @@ impl ToTelegramUpdate for RawUpdate {
             }
         }
 
-        if let Some(query) = &self.callback_query {
+        if let Some(query) = &value.callback_query {
             return TelegramUpdate::CallbackQuery {
-                update_id: self.update_id,
+                update_id: value.update_id,
                 chat_id: query.message.chat.id,
                 content: CallbackData {
                     id: query.id.clone(),
@@ -113,7 +109,7 @@ impl ToTelegramUpdate for RawUpdate {
         }
 
         TelegramUpdate::Ignore {
-            update_id: self.update_id,
+            update_id: value.update_id,
         }
     }
 }

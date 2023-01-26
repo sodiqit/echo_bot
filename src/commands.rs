@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     Exit,
@@ -8,7 +10,7 @@ pub enum Command {
 
 impl Command {
     pub fn new(input: &str) -> Command {
-        input.to_string().to_commands()
+        input.parse::<Command>().unwrap()
     }
 
     pub fn into_string(self) -> String {
@@ -21,22 +23,26 @@ impl Command {
     }
 }
 
-pub trait ToCommands {
-    fn to_commands(&self) -> Command;
+pub trait IsCommand {
     fn is_command(&self) -> bool;
 }
 
-impl ToCommands for String {
-    fn to_commands(&self) -> Command {
-        match self.as_str() {
+impl IsCommand for String {
+    fn is_command(&self) -> bool {
+        self.starts_with('/')
+    }
+}
+
+impl FromStr for Command {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let command = match s {
             "/help" => Command::Help,
             "/exit" => Command::Exit,
             "/repeat" => Command::Repeat,
             _ => Command::Unknown,
-        }
-    }
+        };
 
-    fn is_command(&self) -> bool {
-        self.starts_with('/')
+        Ok(command)
     }
 }

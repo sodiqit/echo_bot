@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::{env, fs};
 use crate::logger::LogLevel;
 
@@ -7,7 +7,7 @@ pub struct ConfigBuilder {
     file_content: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub enum BotMode {
     #[serde(rename="telegram")]
     Telegram,
